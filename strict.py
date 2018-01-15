@@ -81,6 +81,8 @@ def check_nm(n,defs,a,gl):
     if n in defs:
         if defs[n] == Defined:
             pass
+        elif defs[n] == Undefined:
+            raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
         elif n not in gl and n not in builtins:
             raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
 
@@ -136,8 +138,6 @@ def check_vars(a,defs,gl):
                 if d in d3:
                     if d2[d] == Defined and d3[d] == Defined:
                         defs[d] = Defined
-                    else:
-                        defs[d] = Undefined
     elif nm == "Attribute":
         if args[0].id in gl:
             obj = gl[args[0].id]

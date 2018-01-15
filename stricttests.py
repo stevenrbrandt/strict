@@ -1,6 +1,5 @@
 from strict import *
 
-h = 1
 import math
 
 class foo2:
@@ -40,6 +39,21 @@ except UndefException:
 def foo7():
     print(math.sin(3))
 
+h = 1
+
+@strict
+def foo8():
+    print(h)
+
+try:
+    @strict
+    def foo9():
+        print(h)
+        h = 1
+    assert False
+except UndefException:
+    pass
+    
 #@strict
 #def foo(apple):
 #    a = f.b
