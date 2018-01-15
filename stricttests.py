@@ -54,6 +54,45 @@ try:
 except UndefException:
     pass
     
+@strict
+def foo10(a):
+    if a > 1:
+        b = 1
+    else:
+        b = 2
+    b += 1
+    
+try:
+    @strict
+    def foo11(a):
+        if a > 1:
+            b = 1
+        else:
+            c = 2
+        b += 1
+    assert False
+except UndefException:
+    pass
+
+try:
+    @strict
+    def foo12():
+        for a in range(1,1):
+            b = 0
+        b += 1
+        a += 1
+    assert False
+except UndefException:
+    pass
+
+@strict
+def foo13():
+    b = 0
+    for a in range(1,1):
+        b = 0
+    b += 1
+    a += 1
+
 #@strict
 #def foo(apple):
 #    a = f.b

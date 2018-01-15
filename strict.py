@@ -125,6 +125,15 @@ def check_vars(a,defs,gl):
     elif nm == "AugAssign":
         check_nm(args[0].id,defs,a,gl)
         check_vars(args[2],defs,gl)
+    elif nm == "For":
+        d = dupdefs(defs)
+        check_vars(args[0],defs,gl)
+        for arg in args[1:]:
+            check_vars(args[0],d,gl)
+    elif nm == "While":
+        d = dupdefs(defs)
+        for arg in args:
+            check_vars(args[0],d,gl)
     elif nm == "If":
         check_vars(a.test,defs,gl)
         d2 = dupdefs(defs)
@@ -134,10 +143,9 @@ def check_vars(a,defs,gl):
         for b in a.orelse:
             check_vars(b,d3,gl)
         for d in d2:
-            if d not in defs:
-                if d in d3:
-                    if d2[d] == Defined and d3[d] == Defined:
-                        defs[d] = Defined
+            if d in d3:
+                if d2[d] == Defined and d3[d] == Defined:
+                    defs[d] = Defined
     elif nm == "Attribute":
         if args[0].id in gl:
             obj = gl[args[0].id]
