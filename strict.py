@@ -173,5 +173,5 @@ class strict(object):
         for v in f.__code__.co_varnames:
             defs[v] = Undefined
         check_vars(tree,defs,gl)
-    def __call__(self,*kwargs):
-        return self.f(*kwargs)
+    def __call__(self,*kwargs,**hargs):
+        return self.f(*kwargs,**hargs)
