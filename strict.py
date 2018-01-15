@@ -166,7 +166,7 @@ class strict(object):
         src = inspect.getsource(f) #getsource(f)
 
         # Create the AST
-        src = re.sub(r'^\s*@\w+\s*','',src)
+        src = re.sub('^(?=\s+)','if True:\n',src)
         tree = ast.parse(src)
         #get_info(tree)
         defs = {}
