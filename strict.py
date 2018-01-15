@@ -1,5 +1,4 @@
 import ast, re, inspect
-import astdump
 
 class UndefException(Exception):
     def __init__(self,s):
