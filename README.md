@@ -60,3 +60,36 @@ be to the global. Our @strict decorator detects this, too.
 Fixing the above code, either by getting rid of the explicit
 setting of verbose, or by declaring verbose to be global, will
 satisfy strict.
+
+Example 3:
+
+```
+def option(a):
+    if a == 0:
+        b = 2
+    else:
+        c = 1
+    b += 1
+    return b
+
+option(0)
+```
+
+As long as option is called with zero, no error will be detected.
+Variable "b", however, will be undefined if we cal option(1).
+The strict package will detect this error as well. However, if
+we define variable b on all branches of the if statement, strict
+will be satisfied.
+```
+from strict import *
+
+@strict
+def option(a):
+    if a == 0:
+        b = 2
+    else:
+        b = 1
+    b += 1
+
+option(0)
+```
