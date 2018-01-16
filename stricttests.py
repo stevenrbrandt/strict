@@ -93,40 +93,13 @@ def foo13():
     b += 1
     a += 1
 
-#@strict
-#def foo(apple):
-#    a = f.b
-#    a += 1 + 2 * 3
-#    if a < 3:
-#        b = 1+h
-#    else:
-#        b = 2+h
-#    b -= 1
-#    s = {"a":1,"b":2}
-#    q = 0
-#    #q += 1
-#    for q in range(10):
-#        print(q)
-#    print("hello")
-#    def zap(u):
-#        u += 1
-#    class Noob(object):
-#        pass
-#    try:
-#        math.sin(3)
-#    except:
-#        pass
-#    if False:
-#        raise Exception()
-#    with open('/etc/group') as fi:
-#        footxt = fi.read()
-#foo(1)
-
-#moo = 1
-
-#@strict
-#def moose(a):
-#    if a > 2:
-#        moo = 3
-
-#print(moose.f.__code__.co_varnames)
+try:
+    @strict
+    def foo14(apple):
+        if apple < 2:
+            print(aple)
+        else:
+            print("Otherwise")
+    assert False
+except UndefException:
+    pass
