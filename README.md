@@ -1,5 +1,5 @@
 # strict
-Implement strict checking at (sort of) compile time for Python3
+## Implement strict checking at (sort of) compile time for Python3
 
 Normally, in Python, you can write code like the following
 
