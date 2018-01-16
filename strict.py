@@ -80,7 +80,6 @@ def getline(a):
 
 def check_nm(n,defs,a,gl):
     "Check to see if a name is currently defined"
-    found = False
     if n in defs:
         if defs[n] == Defined:
             pass

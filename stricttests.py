@@ -9,6 +9,10 @@ from strict import *
 
 import math
 
+@strict
+def foo1(a):
+    a += 1
+
 class foo2:
     def __init__(self):
         self.a = 1
