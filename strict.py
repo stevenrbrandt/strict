@@ -60,7 +60,7 @@ def dupdefs(d):
         r[k] = d[k]
     return r
 
-builtins = {}
+builtins = {"print":1}
 for b in dir(globals()["__builtins__"]):
     builtins[b] = Defined
 
@@ -82,10 +82,10 @@ def check_nm(n,defs,a,gl):
             pass
         elif defs[n] == Undefined:
             raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
-        elif n not in gl and n not in builtins:
-            raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
+    elif n in gl or n in builtins:
+        pass
     else:
-        raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
+        raise UndefException("2Undefined variable %s, line=%s" % (n,getline(a)))
 
 def check_vars(a,defs,gl):
     "Check a class to see if it meets the strict definition"
