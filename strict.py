@@ -84,6 +84,8 @@ def check_nm(n,defs,a,gl):
             raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
         elif n not in gl and n not in builtins:
             raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
+    else:
+        raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
 
 def check_vars(a,defs,gl):
     "Check a class to see if it meets the strict definition"
