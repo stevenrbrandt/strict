@@ -157,20 +157,17 @@ def check_vars(a,defs,gl):
        for arg in args:
            check_vars(arg,defs,gl)
 
-class strict(object):
-    def __init__(self,f):
-        gl = f.__globals__
-        self.f = f
-        # Get the source code
-        src = inspect.getsource(f) #getsource(f)
+def strict(f):
+    gl = f.__globals__
+    # Get the source code
+    src = inspect.getsource(f) #getsource(f)
 
-        # Create the AST
-        src = re.sub('^(?=\s+)','if True:\n',src)
-        tree = ast.parse(src)
-        #get_info(tree)
-        defs = {}
-        for v in f.__code__.co_varnames:
-            defs[v] = Undefined
-        check_vars(tree,defs,gl)
-    def __call__(self,*kwargs,**hargs):
-        return self.f(*kwargs,**hargs)
+    # Create the AST
+    src = re.sub('^(?=\s+)','if True:\n',src)
+    tree = ast.parse(src)
+    #get_info(tree)
+    defs = {}
+    for v in f.__code__.co_varnames:
+        defs[v] = Undefined
+    check_vars(tree,defs,gl)
+    return f
