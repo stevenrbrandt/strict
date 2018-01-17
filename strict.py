@@ -107,14 +107,14 @@ def check_vars(a,defs,gl):
             defs[a.id] = Defined
     elif nm == "FunctionDef":
         check_depth += 1
-        if check_depth < 2:
-            try:
+        try:
+            if check_depth < 2:
                 for arg in args:
                     check_vars(arg,defs,gl)
-            finally:
-                check_depth -= 1
-        else:
-            defs[a.name] = Defined
+            else:
+                defs[a.name] = Defined
+        finally:
+            check_depth -= 1
     elif nm == "BinOp" or nm == "Compare":
         check_vars(args[0],defs,gl)
         check_vars(args[2],defs,gl)

@@ -120,3 +120,11 @@ def foo15():
     def shark():
         pass
     shark()
+
+try:
+    @strict
+    def foo15():
+        shark2()
+    assert False
+except UndefException:
+    pass
