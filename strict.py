@@ -91,10 +91,10 @@ def check_nm(n,defs,a,gl):
     else:
         raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
 
-depth = 0
+check_depth = 0
 def check_vars(a,defs,gl):
     "Check a class to see if it meets the strict definition"
-    global depth
+    global check_depth
     nm = a.__class__.__name__
     if nm == "Str" or nm == "Num" or nm == "Lt" or nm == "Pass":
         return
@@ -106,10 +106,11 @@ def check_vars(a,defs,gl):
         elif nm2 == "Store":
             defs[a.id] = Defined
     elif nm == "FunctionDef":
-        depth += 1
-        if depth == 1:
+        check_depth += 1
+        if check_depth == 1:
             for arg in args:
                 check_vars(arg,defs,gl)
+            check_depth -= 1
         else:
             defs[a.name] = Defined
     elif nm == "BinOp" or nm == "Compare":
