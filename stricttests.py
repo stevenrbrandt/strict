@@ -128,3 +128,20 @@ try:
     assert False
 except UndefException:
     pass
+
+try:
+    def foo16():
+        @strict
+        def shark():
+            a = c
+    foo16()
+    assert False
+except UndefException:
+    pass
+
+def foo17():
+    spind = 1
+    @strict
+    def shark():
+        a = spind
+foo17()
