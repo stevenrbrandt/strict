@@ -114,3 +114,9 @@ try:
     assert False
 except UndefException:
     pass
+
+@strict
+def foo15():
+    def shark():
+        pass
+    shark()
