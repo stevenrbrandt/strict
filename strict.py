@@ -41,6 +41,7 @@ def get_info(a,depth=0):
     elif nm == "If":
         iter_children = False
         print(nm)
+        get_info(a.test,depth)
         for n in a.body:
             get_info(n,depth+1)
         if len(a.orelse)>0:
@@ -64,7 +65,7 @@ def dupdefs(d):
         r[k] = d[k]
     return r
 
-builtins = {"print":1}
+builtins = {"long":1,"file":1}
 for b in dir(globals()["__builtins__"]):
     builtins[b] = Defined
 
@@ -88,10 +89,12 @@ def check_nm(n,defs,a,gl):
     elif n in gl or n in builtins:
         pass
     else:
-        raise UndefException("2Undefined variable %s, line=%s" % (n,getline(a)))
+        raise UndefException("Undefined variable %s, line=%s" % (n,getline(a)))
 
+depth = 0
 def check_vars(a,defs,gl):
     "Check a class to see if it meets the strict definition"
+    global depth
     nm = a.__class__.__name__
     if nm == "Str" or nm == "Num" or nm == "Lt" or nm == "Pass":
         return
@@ -102,6 +105,13 @@ def check_vars(a,defs,gl):
             check_nm(a.id,defs,a,gl)
         elif nm2 == "Store":
             defs[a.id] = Defined
+    elif nm == "FunctionDef":
+        depth += 1
+        if depth == 1:
+            for arg in args:
+                check_vars(arg,defs,gl)
+        else:
+            defs[a.name] = Defined
     elif nm == "BinOp" or nm == "Compare":
         check_vars(args[0],defs,gl)
         check_vars(args[2],defs,gl)
@@ -126,6 +136,8 @@ def check_vars(a,defs,gl):
         if nm2 == "Name":
             defs[args[0].id] = Defined
         check_vars(args[1],defs,gl)
+    elif nm == "Slice":
+        print(nm,a.lower,a.upper,dir(a))
     elif nm == "AugAssign":
         check_nm(args[0].id,defs,a,gl)
         check_vars(args[2],defs,gl)
@@ -164,13 +176,15 @@ def check_vars(a,defs,gl):
 
 def strict(f):
     gl = f.__globals__
+    for b in dir(f.__globals__["__builtins__"]):
+        builtins[b] = Defined
+
     # Get the source code
     src = inspect.getsource(f) #getsource(f)
 
     # Create the AST
     src = re.sub('^(?=\s+)','if True:\n',src)
     tree = ast.parse(src)
-    #get_info(tree)
     defs = {}
     for v in f.__code__.co_varnames:
         defs[v] = Undefined
