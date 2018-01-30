@@ -16,9 +16,22 @@ class defined(object):
             return "Def"
         else:
             return "Udef"
-        
+
 Undefined = defined(False)
 Defined   = defined(True)
+
+class Info(object):
+    def __init__(self):
+        self.gl = {}
+        self.fl = None
+        self.fn = None
+        self.defs = {}
+
+def dupinfo(info):
+    ninfo = Info()
+    for k in ["fl","fn","defs","gl"]:
+        setattr(ninfo,k,getattr(info,k))
+    return ninfo
 
 def get_info(a,depth=0):
     "Print detailed information about an AST"
@@ -65,37 +78,32 @@ def dupdefs(d):
         r[k] = d[k]
     return r
 
-builtins = {"long":1,"file":1}
+builtins = {"long":1,"file":1,"KeyError":1}
 for b in dir(globals()["__builtins__"]):
     builtins[b] = Defined
 
-def getline(a,nstack):
+def getline(a,info):
     "Print out file and line information"
-    fr = inspect.currentframe()
-    frames = []
-    while fr:
-        frames += [fr]
-        fr = fr.f_back
-    fr = frames[len(frames)-nstack]
-    # This math is weird, and it doesn't work perfectly
-    line = fr.f_lineno + a.lineno - nstack
-    fn = fr.f_code.co_filename
-    return "%s:%d" % (fn,line)
+    line = info.fl + a.lineno - 1
+    return "%s:%d" % (info.fn,line)
 
-def check_nm(n,defs,a,gl,nstack):
+def check_nm(n,a,info):
     "Check to see if a name is currently defined"
+    defs = info.defs
+    fl = info.fl
+    gl = info.gl
     if n in defs:
         if defs[n] == Defined:
             pass
         elif defs[n] == Undefined:
-            raise UndefException("Undefined variable %s, line=%s" % (n,getline(a,nstack)))
+            raise UndefException("Undefined variable %s, line=%s" % (n,getline(a,info)))
     elif n in gl or n in builtins:
         pass
     else:
-        raise UndefException("Undefined variable %s, line=%s" % (n,getline(a,nstack)))
+        raise UndefException("Undefined variable %s, line=%s" % (n,getline(a,info)))
 
 check_depth = 0
-def check_vars(a,defs,gl,nstack):
+def check_vars(a,info):
     "Check a class to see if it meets the strict definition"
     global check_depth
     nm = a.__class__.__name__
@@ -105,84 +113,102 @@ def check_vars(a,defs,gl,nstack):
     if nm == "Name":
         nm2 = args[0].__class__.__name__
         if nm2 == "Load":
-            check_nm(a.id,defs,a,gl,nstack)
+            check_nm(a.id,a,info)
         elif nm2 == "Store":
-            defs[a.id] = Defined
+            info.defs[a.id] = Defined
     elif nm == "FunctionDef":
         check_depth += 1
         try:
             if check_depth < 2:
                 for arg in args:
-                    check_vars(arg,defs,gl,nstack)
+                    check_vars(arg,info)
             else:
-                defs[a.name] = Defined
+                info.defs[a.name] = Defined
         finally:
             check_depth -= 1
     elif nm == "BinOp" or nm == "Compare":
-        check_vars(args[0],defs,gl,nstack)
-        check_vars(args[2],defs,gl,nstack)
+        check_vars(args[0],info)
+        opname = args[1].__class__.__name__
+        if opname == "Add":
+            c = ast.Call(ast.Attribute(args[0],"__add__","ctx"),args[0],ast.Num())
+        elif opname == "Sub":
+            c = ast.Call(ast.Name("__sub__","ctx"),args[0],ast.Num())
+        elif opname == "Mul":
+            c = ast.Call(ast.Name("__mul__","ctx"),args[0],ast.Num())
+        else:
+            c = None
+        if c != None:
+            c.lineno = a.lineno
+            check_vars(c,info)
+        check_vars(args[2],info)
     elif nm == "Call":
         nm2 = args[0].__class__.__name__
         if nm2 == "Name":
-            check_nm(args[0].id,defs,a,gl,nstack)
+            check_nm(args[0].id,a,info)
         elif nm2 == "Attribute":
             attr = args[0].attr
             args2 = [arg for arg in ast.iter_child_nodes(args[0])]
             nm3 = args2[0].__class__.__name__
             if nm3 == "Name":
                 pkg_nm = args2[0].id
-                if pkg_nm in gl or pkg_nm in locals():
-                    pkg = gl[pkg_nm]
+                if pkg_nm in info.gl or pkg_nm in locals():
+                    pkg = info.gl[pkg_nm]
                     if not hasattr(pkg,attr):
-                        raise UndefException("%s is not in %s, line=%s" % (attr,pkg_nm,getline(a,nstack)))
+                        raise UndefException("%s is not in %s, line=%s" % (attr,pkg_nm,getline(a,info)))
         for arg in args[1:]:
-            check_vars(arg,defs,gl,nstack)
+            check_vars(arg,info)
     elif nm == "Assign":
         nm2 = args[0].__class__.__name__
         if nm2 == "Name":
-            defs[args[0].id] = Defined
-        check_vars(args[1],defs,gl,nstack)
+            info.defs[args[0].id] = Defined
+        check_vars(args[1],info)
     elif nm == "Slice":
         print(nm,a.lower,a.upper,dir(a))
     elif nm == "AugAssign":
-        check_nm(args[0].id,defs,a,gl,nstack)
-        check_vars(args[2],defs,gl,nstack)
+        check_nm(args[0].id,a,info)
+        check_vars(args[2],info)
     elif nm == "For":
-        d = dupdefs(defs)
-        check_vars(args[0],defs,gl,nstack)
+        d = dupdefs(info.defs)
+        check_vars(args[0],info)
         for arg in args[1:]:
-            check_vars(args[0],d,gl,nstack)
+            check_vars(args[0],info)
     elif nm == "While":
-        d = dupdefs(defs)
+        d = dupdefs(info.defs)
         for arg in args:
-            check_vars(args[0],d,gl,nstack)
+            check_vars(args[0],info)
     elif nm == "If":
-        check_vars(a.test,defs,gl,nstack)
-        d2 = dupdefs(defs)
+        check_vars(a.test,info)
+        d2 = dupdefs(info.defs)
+        info2 = dupinfo(info)
+        info2.defs = d2
         for b in a.body:
-            check_vars(b,d2,gl,nstack)
-        d3 = dupdefs(defs)
+            check_vars(b,info2)
+        d3 = dupdefs(info.defs)
+        info3 = dupinfo(info)
+        info3.defs = d3
         for b in a.orelse:
-            check_vars(b,d3,gl,nstack)
+            check_vars(b,info3)
         for d in d2:
             if d in d3:
                 if d2[d] == Defined and d3[d] == Defined:
-                    defs[d] = Defined
+                    info.defs[d] = Defined
     elif nm == "Attribute":
         if args[0].id in gl:
             obj = gl[args[0].id]
             if not hasattr(obj,a.attr):
-                line = getline(a,nstack)
+                line = getline(a,info)
                 raise UndefException("%s not in %s, line=%s" % (a.attr,args[0].id,line))
     elif nm == "arg":
-        defs[a.arg] = Defined
+        info.defs[a.arg] = Defined
     else:
        for arg in args:
-           check_vars(arg,defs,gl,nstack)
+           check_vars(arg,info)
 
 def strict(f):
     fr = inspect.currentframe()
     gl = f.__globals__
+    fl = f.__code__.co_firstlineno
+    fn = f.__code__.co_filename
     for b in dir(f.__globals__["__builtins__"]):
         builtins[b] = Defined
     n = 0
@@ -194,7 +220,7 @@ def strict(f):
                 builtins[b] = Defined
 
     # Get the source code
-    src = inspect.getsource(f) 
+    src = inspect.getsource(f)
 
     # Create the AST
     src = re.sub('^(?=\s+)','if True:\n',src)
@@ -202,5 +228,10 @@ def strict(f):
     defs = {}
     for v in f.__code__.co_varnames:
         defs[v] = Undefined
-    check_vars(tree,defs,gl,n-1)
+    info = Info()
+    info.gl = gl
+    info.fl = fl
+    info.fn = fn
+    info.defs = defs
+    check_vars(tree,info)
     return f
